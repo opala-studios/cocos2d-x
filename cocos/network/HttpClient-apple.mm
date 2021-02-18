@@ -170,7 +170,7 @@ static int processTask(HttpClient* client, HttpRequest* request, NSString* reque
     }
 
     //if request type is post or put,set header and data
-    if([requestType  isEqual: @"POST"] || [requestType isEqual: @"PUT"])
+    if([requestType  isEqual: @"POST"] || [requestType isEqual: @"PUT"] || [requestType isEqual:@"PATCH"])
     {   
         char* requestDataBuffer = request->getRequestData();
         if (nullptr !=  requestDataBuffer && 0 != request->getRequestDataSize())
@@ -510,6 +510,10 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
             requestType = @"DELETE";
             break;
 
+        case HttpRequest::Type::PATCH:
+            requestType = @"PATCH";
+            break;
+            
         default:
             CCASSERT(false, "CCHttpClient: unknown request type, only GET,POST,PUT or DELETE is supported");
             break;
