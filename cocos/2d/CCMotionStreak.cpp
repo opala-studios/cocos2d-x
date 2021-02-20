@@ -208,7 +208,7 @@ void MotionStreak::tintWithColor(const Color3B& colors)
     }
 }
 
-Texture2D* MotionStreak::getTexture() const
+Texture2D* MotionStreak::getTexture(void) const
 {
     return _texture;
 }
@@ -228,7 +228,7 @@ void MotionStreak::setBlendFunc(const BlendFunc &blendFunc)
     _blendFunc = blendFunc;
 }
 
-const BlendFunc& MotionStreak::getBlendFunc() const
+const BlendFunc& MotionStreak::getBlendFunc(void) const
 {
     return _blendFunc;
 }
@@ -238,7 +238,7 @@ void MotionStreak::setOpacity(GLubyte /*opacity*/)
     CCASSERT(false, "Set opacity no supported");
 }
 
-GLubyte MotionStreak::getOpacity() const
+GLubyte MotionStreak::getOpacity(void) const
 {
     CCASSERT(false, "Opacity no supported");
     return 0;
@@ -248,7 +248,7 @@ void MotionStreak::setOpacityModifyRGB(bool /*bValue*/)
 {
 }
 
-bool MotionStreak::isOpacityModifyRGB() const
+bool MotionStreak::isOpacityModifyRGB(void) const
 {
     return false;
 }

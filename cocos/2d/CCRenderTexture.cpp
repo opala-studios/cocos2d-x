@@ -27,8 +27,6 @@ THE SOFTWARE.
 
 #include "2d/CCRenderTexture.h"
 
-#include <utility>
-
 #include "base/ccUtils.h"
 #include "platform/CCFileUtils.h"
 #include "base/CCEventType.h"
@@ -253,7 +251,7 @@ bool RenderTexture::initWithWidthAndHeight(int w, int h, Texture2D::PixelFormat 
         _texture = new (std::nothrow) Texture2D();
         if (_texture)
         {
-            _texture->initWithData(data, dataLen, (Texture2D::PixelFormat)_pixelFormat, powW, powH, Size((float)w, (float)h), CC_ENABLE_PREMULTIPLIED_ALPHA != 0);
+            _texture->initWithData(data, dataLen, (Texture2D::PixelFormat)_pixelFormat, powW, powH, Size((float)w, (float)h));
         }
         else
         {
@@ -267,7 +265,7 @@ bool RenderTexture::initWithWidthAndHeight(int w, int h, Texture2D::PixelFormat 
             _textureCopy = new (std::nothrow) Texture2D();
             if (_textureCopy)
             {
-                _textureCopy->initWithData(data, dataLen, (Texture2D::PixelFormat)_pixelFormat, powW, powH, Size((float)w, (float)h), CC_ENABLE_PREMULTIPLIED_ALPHA != 0);
+                _textureCopy->initWithData(data, dataLen, (Texture2D::PixelFormat)_pixelFormat, powW, powH, Size((float)w, (float)h));
             }
             else
             {
@@ -303,13 +301,8 @@ bool RenderTexture::initWithWidthAndHeight(int w, int h, Texture2D::PixelFormat 
         _texture->release();
         _sprite->setFlippedY(true);
 
-#if CC_ENABLE_PREMULTIPLIED_ALPHA != 0
-        _sprite->setBlendFunc(BlendFunc::ALPHA_PREMULTIPLIED);
+        _sprite->setBlendFunc( BlendFunc::ALPHA_PREMULTIPLIED );
         _sprite->setOpacityModifyRGB(true);
-#else
-        _sprite->setBlendFunc(BlendFunc::ALPHA_NON_PREMULTIPLIED);
-        _sprite->setOpacityModifyRGB(false);
-#endif
 
         glBindRenderbuffer(GL_RENDERBUFFER, oldRBO);
         glBindFramebuffer(GL_FRAMEBUFFER, _oldFBO);
@@ -513,29 +506,7 @@ void RenderTexture::visit(Renderer *renderer, const Mat4 &parentTransform, uint3
     // setOrderOfArrival(0);
 }
 
-bool RenderTexture::saveToFileAsNonPMA(const std::string& filename, bool isRGBA, const std::function<void(RenderTexture*, const std::string&)>& callback)
-{
-    std::string basename(filename);
-    std::transform(basename.begin(), basename.end(), basename.begin(), ::tolower);
-
-    if (basename.find(".png") != std::string::npos)
-    {
-        return saveToFileAsNonPMA(filename, Image::Format::PNG, isRGBA, callback);
-    }
-    else if (basename.find(".jpg") != std::string::npos)
-    {
-        if (isRGBA) CCLOG("RGBA is not supported for JPG format.");
-        return saveToFileAsNonPMA(filename, Image::Format::JPG, false, callback);
-    }
-    else
-    {
-        CCLOG("Only PNG and JPG format are supported now!");
-    }
-
-    return saveToFileAsNonPMA(filename, Image::Format::JPG, false, callback);
-}
-
-bool RenderTexture::saveToFile(const std::string& filename, bool isRGBA, const std::function<void (RenderTexture*, const std::string&)>& callback)
+bool RenderTexture::saveToFile(const std::string& filename, bool isRGBA, std::function<void (RenderTexture*, const std::string&)> callback)
 {
     std::string basename(filename);
     std::transform(basename.begin(), basename.end(), basename.begin(), ::tolower);
@@ -557,23 +528,7 @@ bool RenderTexture::saveToFile(const std::string& filename, bool isRGBA, const s
     return saveToFile(filename, Image::Format::JPG, false, callback);
 }
 
-bool RenderTexture::saveToFileAsNonPMA(const std::string& fileName, Image::Format format, bool isRGBA, const std::function<void(RenderTexture*, const std::string&)>& callback)
-{
-    CCASSERT(format == Image::Format::JPG || format == Image::Format::PNG,
-        "the image can only be saved as JPG or PNG format");
-    if (isRGBA && format == Image::Format::JPG) CCLOG("RGBA is not supported for JPG format");
-
-    _saveFileCallback = callback;
-
-    std::string fullpath = FileUtils::getInstance()->getWritablePath() + fileName;
-    _saveToFileCommand.init(_globalZOrder);
-    _saveToFileCommand.func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, fullpath, isRGBA, true);
-
-    Director::getInstance()->getRenderer()->addCommand(&_saveToFileCommand);
-    return true;
-}
-
-bool RenderTexture::saveToFile(const std::string& fileName, Image::Format format, bool isRGBA, const std::function<void (RenderTexture*, const std::string&)>& callback)
+bool RenderTexture::saveToFile(const std::string& fileName, Image::Format format, bool isRGBA, std::function<void (RenderTexture*, const std::string&)> callback)
 {
     CCASSERT(format == Image::Format::JPG || format == Image::Format::PNG,
              "the image can only be saved as JPG or PNG format");
@@ -583,21 +538,17 @@ bool RenderTexture::saveToFile(const std::string& fileName, Image::Format format
     
     std::string fullpath = FileUtils::getInstance()->getWritablePath() + fileName;
     _saveToFileCommand.init(_globalZOrder);
-    _saveToFileCommand.func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, fullpath, isRGBA, false);
+    _saveToFileCommand.func = CC_CALLBACK_0(RenderTexture::onSaveToFile, this, fullpath, isRGBA);
     
     Director::getInstance()->getRenderer()->addCommand(&_saveToFileCommand);
     return true;
 }
 
-void RenderTexture::onSaveToFile(const std::string& filename, bool isRGBA, bool forceNonPMA)
+void RenderTexture::onSaveToFile(const std::string& filename, bool isRGBA)
 {
     Image *image = newImage(true);
     if (image)
     {
-        if (forceNonPMA && image->hasPremultipliedAlpha())
-        {
-            image->reversePremultipliedAlpha();
-        }
         image->saveToFile(filename, !isRGBA);
     }
     if(_saveFileCallback)
@@ -669,11 +620,11 @@ Image* RenderTexture::newImage(bool flipImage)
                        savedBufferWidth * 4);
             }
 
-            image->initWithRawData(buffer, savedBufferWidth * savedBufferHeight * 4, savedBufferWidth, savedBufferHeight, 8, _texture->hasPremultipliedAlpha());
+            image->initWithRawData(buffer, savedBufferWidth * savedBufferHeight * 4, savedBufferWidth, savedBufferHeight, 8);
         }
         else
         {
-            image->initWithRawData(tempData, savedBufferWidth * savedBufferHeight * 4, savedBufferWidth, savedBufferHeight, 8, _texture->hasPremultipliedAlpha());
+            image->initWithRawData(tempData, savedBufferWidth * savedBufferHeight * 4, savedBufferWidth, savedBufferHeight, 8);
         }
         
     } while (0);

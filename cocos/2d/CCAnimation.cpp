@@ -156,7 +156,7 @@ Animation::Animation()
 
 }
 
-Animation::~Animation()
+Animation::~Animation(void)
 {
     CCLOGINFO("deallocing Animation: %p", this);
 }
@@ -185,7 +185,7 @@ void Animation::addSpriteFrameWithTexture(Texture2D *pobTexture, const Rect& rec
     addSpriteFrame(frame);
 }
 
-float Animation::getDuration() const
+float Animation::getDuration(void) const
 {
     return _totalDelayUnits * _delayPerUnit;
 }

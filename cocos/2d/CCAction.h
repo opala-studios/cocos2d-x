@@ -294,7 +294,7 @@ public:
     
 CC_CONSTRUCTOR_ACCESS:
     Speed();
-    virtual ~Speed();
+    virtual ~Speed(void);
     /** Initializes the action. */
     bool initWithAction(ActionInterval *action, float speed);
 

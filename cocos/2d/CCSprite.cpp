@@ -269,6 +269,10 @@ bool Sprite::initWithTexture(Texture2D *texture, const Rect& rect, bool rotated)
         _recursiveDirty = false;
         setDirty(false);
 
+        _opacityModifyRGB = true;
+
+        _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+
         _flippedX = _flippedY = false;
 
         // default transform anchor: center
@@ -952,7 +956,7 @@ void Sprite::populateTriangle(int quadIndex, const V3F_C4B_T2F_Quad& quad)
 
 // MARK: visit, draw, transform
 
-void Sprite::updateTransform()
+void Sprite::updateTransform(void)
 {
     CCASSERT(_renderMode == RenderMode::QUAD_BATCHNODE, "updateTransform is only valid when Sprite is being rendered using an SpriteBatchNode");
 
@@ -1219,7 +1223,7 @@ void Sprite::sortAllChildren()
 // used only when parent is SpriteBatchNode
 //
 
-void Sprite::setReorderChildDirtyRecursively()
+void Sprite::setReorderChildDirtyRecursively(void)
 {
     //only set parents flag the first time
     if ( ! _reorderChildDirty )
@@ -1437,7 +1441,7 @@ void Sprite::setFlippedX(bool flippedX)
     }
 }
 
-bool Sprite::isFlippedX() const
+bool Sprite::isFlippedX(void) const
 {
     return _flippedX;
 }
@@ -1451,7 +1455,7 @@ void Sprite::setFlippedY(bool flippedY)
     }
 }
 
-bool Sprite::isFlippedY() const
+bool Sprite::isFlippedY(void) const
 {
     return _flippedY;
 }
@@ -1498,7 +1502,7 @@ void Sprite::flipY() {
 // MARK: RGBA protocol
 //
 
-void Sprite::updateColor()
+void Sprite::updateColor(void)
 {
     Color4B color4( _displayedColor.r, _displayedColor.g, _displayedColor.b, _displayedOpacity );
 
@@ -1547,7 +1551,7 @@ void Sprite::setOpacityModifyRGB(bool modify)
     }
 }
 
-bool Sprite::isOpacityModifyRGB() const
+bool Sprite::isOpacityModifyRGB(void) const
 {
     return _opacityModifyRGB;
 }
@@ -1690,7 +1694,7 @@ void Sprite::setBatchNode(SpriteBatchNode *spriteBatchNode)
 
 // MARK: Texture protocol
 
-void Sprite::updateBlendFunc()
+void Sprite::updateBlendFunc(void)
 {
     CCASSERT(_renderMode != RenderMode::QUAD_BATCHNODE, "CCSprite: updateBlendFunc doesn't work when the sprite is rendered using a SpriteBatchNode");
 

@@ -297,8 +297,6 @@ protected:
     void updateVertexBuffer();
     void updateIndexBuffer();
     void updatePrimitives();
-
-    virtual void setOpacity(GLubyte opacity) override;
 protected:
     
     //! name of the layer

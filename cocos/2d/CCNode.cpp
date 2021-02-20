@@ -420,7 +420,7 @@ void Node::setRotationSkewY(float rotationY)
 }
 
 /// scale getter
-float Node::getScale() const
+float Node::getScale(void) const
 {
     CCASSERT( _scaleX == _scaleY, "CCNode#scale. ScaleX != ScaleY. Don't know which one to return");
     return _scaleX;
@@ -812,13 +812,13 @@ Node* Node::getChildByName(const std::string& name) const
     for (const auto& child : _children)
     {
         // Different strings may have the same hash code, but can use it to compare first for speed
-        if(child->_hashOfName == hash && child->_name == name)
+        if(child->_hashOfName == hash && child->_name.compare(name) == 0)
             return child;
     }
     return nullptr;
 }
 
-void Node::enumerateChildren(const std::string &name, const std::function<bool (Node *)>& callback) const
+void Node::enumerateChildren(const std::string &name, std::function<bool (Node *)> callback) const
 {
     CCASSERT(!name.empty(), "Invalid name");
     CCASSERT(callback != nullptr, "Invalid callback function");
@@ -850,31 +850,26 @@ void Node::enumerateChildren(const std::string &name, const std::function<bool (
     
     // Remove '//', '/..' if exist
     std::string newName = name.substr(subStrStartPos, subStrlength);
-    
-    const Node* target = this;
-    
+
     if (searchFromParent)
     {
-        if (nullptr == _parent)
-        {
-            return;
-        }
-        target = _parent;
+        newName.insert(0, "[[:alnum:]]+/");
     }
+    
     
     if (searchRecursively)
     {
         // name is '//xxx'
-        target->doEnumerateRecursive(target, newName, callback);
+        doEnumerateRecursive(this, newName, callback);
     }
     else
     {
         // name is xxx
-        target->doEnumerate(newName, callback);
+        doEnumerate(newName, callback);
     }
 }
 
-bool Node::doEnumerateRecursive(const Node* node, const std::string &name, const std::function<bool (Node *)>& callback) const
+bool Node::doEnumerateRecursive(const Node* node, const std::string &name, std::function<bool (Node *)> callback) const
 {
     bool ret =false;
     
@@ -899,7 +894,7 @@ bool Node::doEnumerateRecursive(const Node* node, const std::string &name, const
     return ret;
 }
 
-bool Node::doEnumerate(std::string name, const std::function<bool (Node *)>& callback) const
+bool Node::doEnumerate(std::string name, std::function<bool (Node *)> callback) const
 {
     // name may be xxx/yyy, should find its parent
     size_t pos = name.find('/');
@@ -1997,7 +1992,7 @@ void Node::removeAllComponents()
 
 // MARK: Opacity and Color
 
-GLubyte Node::getOpacity() const
+GLubyte Node::getOpacity(void) const
 {
     return _realOpacity;
 }
@@ -2028,7 +2023,7 @@ void Node::updateDisplayedOpacity(GLubyte parentOpacity)
     }
 }
 
-bool Node::isCascadeOpacityEnabled() const
+bool Node::isCascadeOpacityEnabled(void) const
 {
     return _cascadeOpacityEnabled;
 }
@@ -2082,7 +2077,7 @@ bool Node::isOpacityModifyRGB() const
     return false;
 }
 
-const Color3B& Node::getColor() const
+const Color3B& Node::getColor(void) const
 {
     return _realColor;
 }
@@ -2115,7 +2110,7 @@ void Node::updateDisplayedColor(const Color3B& parentColor)
     }
 }
 
-bool Node::isCascadeColorEnabled() const
+bool Node::isCascadeColorEnabled(void) const
 {
     return _cascadeColorEnabled;
 }

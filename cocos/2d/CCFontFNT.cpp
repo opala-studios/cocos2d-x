@@ -26,7 +26,6 @@
 
 #include "2d/CCFontFNT.h"
 #include "2d/CCFontAtlas.h"
-#include "2d/CCSpriteFrameCache.h"
 #include "platform/CCFileUtils.h"
 #include "base/CCConfiguration.h"
 #include "base/CCDirector.h"
@@ -35,6 +34,8 @@
 #include "renderer/CCTextureCache.h"
 
 #include <cmath>
+#include <set>
+#include <unordered_map>
 
 NS_CC_BEGIN
 
@@ -50,6 +51,99 @@ enum {
 };
 
 struct _FontDefHashElement;
+
+/**
+@struct BMFontDef
+BMFont definition
+*/
+typedef struct _BMFontDef {
+    //! ID of the character
+    unsigned int charID;
+    //! origin and size of the font
+    Rect rect;
+    //! The X amount the image should be offset when drawing the image (in pixels)
+    short xOffset;
+    //! The Y amount the image should be offset when drawing the image (in pixels)
+    short yOffset;
+    //! The amount to move the current position after drawing the character (in pixels)
+    short xAdvance;
+} BMFontDef;
+
+/** @struct BMFontPadding
+BMFont padding
+@since v0.8.2
+*/
+typedef struct _BMFontPadding {
+    /// padding left
+    int left;
+    /// padding top
+    int top;
+    /// padding right
+    int right;
+    /// padding bottom
+    int bottom;
+} BMFontPadding;
+
+/** @brief BMFontConfiguration has parsed configuration of the .fnt file
+@since v0.8
+*/
+class CC_DLL BMFontConfiguration : public Ref
+{
+    // FIXME: Creating a public interface so that the bitmapFontArray[] is accessible
+public://@public
+    // BMFont definitions
+    std::unordered_map<int /* key */, BMFontDef /* fontDef */> _fontDefDictionary;
+
+    //! FNTConfig: Common Height Should be signed (issue #1343)
+    int _commonHeight;
+    //! Padding
+    BMFontPadding    _padding;
+    //! atlas name
+    std::string _atlasName;
+    //! values for kerning
+    std::unordered_map<uint64_t /* key */, int /* amount */> _kerningDictionary;
+    
+    // Character Set defines the letters that actually exist in the font
+    std::set<unsigned int> *_characterSet;
+    //! Font Size
+    int _fontSize;
+public:
+    /**
+     * @js ctor
+     */
+    BMFontConfiguration();
+    /**
+     * @js NA
+     * @lua NA
+     */
+    virtual ~BMFontConfiguration();
+    /**
+     * @js NA
+     * @lua NA
+     */
+    std::string description() const;
+
+    /** allocates a BMFontConfiguration with a FNT file */
+    static BMFontConfiguration * create(const std::string& FNTfile);
+
+    /** initializes a BitmapFontConfiguration with a FNT file */
+    bool initWithFNTfile(const std::string& FNTfile);
+    
+    const std::string& getAtlasName() { return _atlasName; }
+    void setAtlasName(const std::string& atlasName) { _atlasName = atlasName; }
+    
+    std::set<unsigned int>* getCharacterSet() const;
+private:
+    std::set<unsigned int>* parseConfigFile(const std::string& controlFile);
+    std::set<unsigned int>* parseBinaryConfigFile(unsigned char* pData, unsigned long size, const std::string& controlFile);
+    unsigned int parseCharacterDefinition(const char* line);
+    void parseInfoArguments(const char* line);
+    void parseCommonArguments(const char* line);
+    void parseImageFileName(const char* line, const std::string& fntFile);
+    void parseKerningEntry(const char* line);
+    void purgeKerningDictionary();
+    void purgeFontDefDictionary();
+};
 
 //
 //FNTConfig Cache - free functions
@@ -128,7 +222,7 @@ BMFontConfiguration::~BMFontConfiguration()
     CC_SAFE_DELETE(_characterSet);
 }
 
-std::string BMFontConfiguration::description() const
+std::string BMFontConfiguration::description(void) const
 {
     return StringUtils::format(
         "<BMFontConfiguration = " CC_FORMAT_PRINTF_SIZE_T " | Glphys:%d Kernings:%d | Image = %s>",
@@ -394,10 +488,9 @@ void BMFontConfiguration::parseImageFileName(const char* line, const std::string
     int pageId;
     sscanf(line, "page id=%d", &pageId);
     CCASSERT(pageId == 0, "LabelBMFont file could not be found");
-
     // file 
     char fileName[255];
-    sscanf(strstr(line, "file=\"") + 6, "%[^\"]", fileName);
+    sscanf(strchr(line,'"') + 1, "%[^\"]", fileName);
     _atlasName = FileUtils::getInstance()->fullPathFromRelativeFile(fileName, fntFile);
 }
 
@@ -510,59 +603,20 @@ void BMFontConfiguration::parseKerningEntry(const char* line)
     _kerningDictionary[key] = amount;
 }
 
-FontFNT * FontFNT::create(const std::string& fntFilePath, const Rect& imageRect, bool imageRotated)
+FontFNT * FontFNT::create(const std::string& fntFilePath, const Vec2& imageOffset /* = Vec2::ZERO */)
 {
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
+    BMFontConfiguration *newConf = FNTConfigLoadFile(fntFilePath);
     if (!newConf)
         return nullptr;
     
-    const auto tempFont = new FontFNT(newConf, imageRect, imageRotated);
-    
-    if (!tempFont)
-    {
-        return nullptr;
-    }
-    tempFont->setFontSize(newConf->_fontSize);
-    tempFont->autorelease();
-    return tempFont;
-}
-
-FontFNT* FontFNT::create(const std::string& fntFilePath, const std::string& subTextureKey)
-{
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
-    if (!newConf)
-        return nullptr;
-
-    const auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(subTextureKey);
-    if (!frame)
-    {
-        return nullptr;
-    }
-    auto tempFont = new FontFNT(newConf, frame->getRectInPixels(), frame->isRotated());
-
-    if (!tempFont)
-    {
-        return nullptr;
-    }
-    tempFont->setFontSize(newConf->_fontSize);
-    tempFont->autorelease();
-    return tempFont;
-}
-
-FontFNT* FontFNT::create(const std::string& fntFilePath)
-{
-    const auto newConf = FNTConfigLoadFile(fntFilePath);
-    if (!newConf)
-        return nullptr;
-
     // add the texture
-    const auto tempTexture = Director::getInstance()->getTextureCache()->addImage(newConf->getAtlasName());
+    Texture2D *tempTexture = Director::getInstance()->getTextureCache()->addImage(newConf->getAtlasName());
     if (!tempTexture)
     {
         return nullptr;
     }
-    FontFNT* tempFont = new FontFNT(newConf);
-
+    
+    FontFNT *tempFont =  new FontFNT(newConf,imageOffset);
     tempFont->setFontSize(newConf->_fontSize);
     if (!tempFont)
     {
@@ -572,24 +626,11 @@ FontFNT* FontFNT::create(const std::string& fntFilePath)
     return tempFont;
 }
 
-FontFNT* FontFNT::create(const std::string& fntFilePath, const Vec2& imageOffset)
-{
-    return create(fntFilePath, Rect(imageOffset.x, imageOffset.y, 0, 0), false);
-}
-
-FontFNT::FontFNT(BMFontConfiguration *theContfig, const Rect& imageRect, bool imageRotated)
-: _configuration(theContfig)
-, _imageRectInPoints(CC_RECT_PIXELS_TO_POINTS(imageRect))
-, _imageRotated(imageRotated)
+FontFNT::FontFNT(BMFontConfiguration *theContfig, const Vec2& imageOffset /* = Vec2::ZERO */)
+:_configuration(theContfig)
+,_imageOffset(CC_POINT_PIXELS_TO_POINTS(imageOffset))
 {
     _configuration->retain();
-}
-
-FontFNT::FontFNT(BMFontConfiguration* theContfig)
-: _configuration(theContfig)
-, _imageRectInPoints(Rect::ZERO)
-, _imageRotated(false)
-{
 }
 
 FontFNT::~FontFNT()
@@ -681,39 +722,24 @@ FontAtlas * FontFNT::createFontAtlas()
     }
     
     tempAtlas->setLineHeight(originalLineHeight * factor);
-
-    auto rw = _imageRectInPoints.size.width;
-    auto rh = _imageRectInPoints.size.height;
-
-    if (_imageRotated)
-        std::swap(rw, rh);
-
-    const auto left = _imageRectInPoints.origin.x;
-    const auto right = _imageRectInPoints.origin.x + rw;
-    const auto top = _imageRectInPoints.origin.y;
-
+    
     for (auto&& e : _configuration->_fontDefDictionary)
     {
         BMFontDef& fontDef = e.second;
-
+        
         FontLetterDefinition tempDefinition;
 
-        const auto tempRect = CC_RECT_PIXELS_TO_POINTS(fontDef.rect);
+        Rect tempRect;
+        
+        tempRect = fontDef.rect;
+        tempRect = CC_RECT_PIXELS_TO_POINTS(tempRect);
         
         tempDefinition.offsetX  = fontDef.xOffset;
         tempDefinition.offsetY  = fontDef.yOffset;
-
-        if (_imageRotated)
-        {
-            tempDefinition.U = right - tempRect.origin.y - tempRect.size.height;
-            tempDefinition.V = tempRect.origin.x + top;
-        }
-        else
-        {
-            tempDefinition.U = tempRect.origin.x + left;
-            tempDefinition.V = tempRect.origin.y + top;
-        }
-
+        
+        tempDefinition.U        = tempRect.origin.x + _imageOffset.x;
+        tempDefinition.V        = tempRect.origin.y + _imageOffset.y;
+        
         tempDefinition.width    = tempRect.size.width;
         tempDefinition.height   = tempRect.size.height;
         
@@ -722,8 +748,6 @@ FontAtlas * FontFNT::createFontAtlas()
         
         tempDefinition.validDefinition = true;
         tempDefinition.xAdvance = fontDef.xAdvance;
-        tempDefinition.rotated = _imageRotated;
-
         // add the new definition
         if (65535 < fontDef.charID) {
             CCLOGWARN("Warning: 65535 < fontDef.charID (%u), ignored", fontDef.charID);
@@ -759,12 +783,12 @@ void FontFNT::reloadBMFontResource(const std::string& fntFilePath)
     {
         s_configurations->erase(fntFilePath);
     }
-
     ret = BMFontConfiguration::create(fntFilePath);
     if (ret)
     {
         s_configurations->insert(fntFilePath, ret);
         Director::getInstance()->getTextureCache()->reloadTexture(ret->getAtlasName());
+
     }
 }
 

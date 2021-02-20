@@ -222,7 +222,7 @@ void LabelAtlas::setString(const std::string &label)
     _quadsToDraw = len;
 }
 
-const std::string& LabelAtlas::getString() const
+const std::string& LabelAtlas::getString(void) const
 {
     return _string;
 }

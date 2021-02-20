@@ -332,7 +332,7 @@ void ClippingNode::setStencil(Node *stencil)
 
 bool ClippingNode::hasContent() const
 {
-    return !_children.empty();
+    return _children.size() > 0;
 }
 
 GLfloat ClippingNode::getAlphaThreshold() const
