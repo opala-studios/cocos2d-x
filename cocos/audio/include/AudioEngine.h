@@ -284,14 +284,14 @@ public:
      * Preload audio file.
      * @param filePath The file path of an audio.
      */
-    static void preload(const std::string& filePath) { preload(filePath, nullptr); }
+    static int preload(const std::string& filePath) { return preload(filePath, nullptr); }
 
     /**
      * Preload audio file.
      * @param filePath The file path of an audio.
      * @param callback A callback which will be called after loading is finished.
      */
-    static void preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback);
+    static int preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback);
 
     /**
      * Gets playing audio count.

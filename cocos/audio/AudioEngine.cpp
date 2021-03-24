@@ -530,12 +530,12 @@ AudioProfile* AudioEngine::getProfile(const std::string &name)
     }
 }
 
-void AudioEngine::preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback)
+int AudioEngine::preload(const std::string& filePath, const std::function<void(bool isSuccess)>& callback)
 {
     if (!isEnabled())
     {
         callback(false);
-        return;
+        return -1;
     }
     
     lazyInit();
@@ -547,11 +547,13 @@ void AudioEngine::preload(const std::string& filePath, const std::function<void(
             {
                 callback(false);
             }
-            return;
+            return -1;
         }
 
         _audioEngineImpl->preload(filePath, callback);
     }
+
+    return -1; //huh
 }
 
 void AudioEngine::addTask(const std::function<void()>& task)

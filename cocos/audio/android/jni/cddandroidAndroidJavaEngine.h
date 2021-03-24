@@ -156,7 +156,7 @@ namespace CocosDenshion {
              * @brief Preload a compressed audio file.
              * @param filePath The path of the effect file.
              */
-            virtual void preloadEffect(const char* filePath);
+            virtual int preloadEffect(const char* filePath);
             
             /*
              * @brief Unload the preloaded effect from internal buffer.

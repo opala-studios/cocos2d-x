@@ -162,12 +162,13 @@ static CDBufferManager *bufferManager = nil;
   [soundEngine stopAllSounds];
 }
 
--(void) preloadEffect:(NSString*) filePath
+-(int) preloadEffect:(NSString*) filePath
 {
     int soundId = [bufferManager bufferForFile:filePath create:YES];
     if (soundId == kCDNoBuffer) {
         CDLOG(@"Denshion::SimpleAudioEngine sound failed to preload %@",filePath);
     }
+    return soundId;
 }
 
 -(void) unloadEffect:(NSString*) filePath

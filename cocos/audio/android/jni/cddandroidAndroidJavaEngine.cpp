@@ -265,16 +265,16 @@ void AndroidJavaEngine::stopAllEffects()
     }
 }
 
-void AndroidJavaEngine::preloadEffect(const char* filePath)
+int AndroidJavaEngine::preloadEffect(const char* filePath)
 {
     if (!_implementBaseOnAudioEngine)
     {
         std::string fullPath = CocosDenshion::android::getFullPathWithoutAssetsPrefix(filePath);
-        JniHelper::callStaticVoidMethod(helperClassName, "preloadEffect", fullPath);
+        return JniHelper::callStaticIntMethod(helperClassName, "preloadEffect", fullPath);
     }
     else
     {
-        AudioEngine::preload(filePath);
+        return AudioEngine::preload(filePath);
     }
 }
 
