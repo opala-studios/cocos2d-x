@@ -38,7 +38,6 @@ THE SOFTWARE.
 #include "2d/CCDrawingPrimitives.h"
 #include "platform/android/jni/JniHelper.h"
 #include "platform/CCDataManager.h"
-#include "network/CCDownloader-android.h"
 #include <unistd.h>
 #include <android/log.h>
 #include <android/api-level.h>
@@ -87,7 +86,7 @@ extern "C"
 //    return JNI_VERSION_1_4;
 //}
 
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jobject thiz, jint w, jint h)
+JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, jclass, jint w, jint h)
 {
     DataManager::setProcessID(getpid());
     DataManager::setFrameSize(w, h);
@@ -113,10 +112,9 @@ JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeInit(JNIEnv*  env, j
         director->getEventDispatcher()->dispatchEvent(&recreatedEvent);
         director->setGLDefaultValues();
     }
-    cocos2d::network::_preloadJavaDownloaderClass();
 }
 
-JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jobject thiz)
+JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNIEnv*  env, jclass)
 {
     cocos2d::Application::getInstance()->initGLContextAttrs(); 
     GLContextAttrs _glContextAttrs = GLView::getGLContextAttrs();
@@ -131,12 +129,12 @@ JNIEXPORT jintArray Java_org_cocos2dx_lib_Cocos2dxActivity_getGLContextAttrs(JNI
     return glContextAttrsJava;
 }
 
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxAudioFocusManager_nativeOnAudioFocusChange(JNIEnv* env, jobject thiz, jint focusChange)
+JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxAudioFocusManager_nativeOnAudioFocusChange(JNIEnv* env, jclass, jint focusChange)
 {
     cocos_audioengine_focus_change(focusChange);
 }
 
-JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceChanged(JNIEnv*  env, jobject thiz, jint w, jint h)
+JNIEXPORT void Java_org_cocos2dx_lib_Cocos2dxRenderer_nativeOnSurfaceChanged(JNIEnv*  env, jclass, jint w, jint h)
 {
     cocos2d::Application::getInstance()->applicationScreenSizeChanged(w, h);
 }

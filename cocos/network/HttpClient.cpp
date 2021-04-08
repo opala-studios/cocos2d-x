@@ -26,7 +26,6 @@
  ****************************************************************************/
 
 #include "network/HttpClient.h"
-#include <queue>
 #include <errno.h>
 #include <curl/curl.h>
 #include "base/CCDirector.h"
@@ -35,10 +34,6 @@
 NS_CC_BEGIN
 
 namespace network {
-
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32)
-typedef int int32_t;
-#endif
 
 static HttpClient* _httpClient = nullptr; // pointer to singleton
 
@@ -74,9 +69,24 @@ static size_t writeHeaderData(void *ptr, size_t size, size_t nmemb, void *stream
 static int processGetTask(HttpClient* client, HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processPostTask(HttpClient* client, HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processPutTask(HttpClient* client,  HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
-static int processPatchTask(HttpClient* client,  HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processDeleteTask(HttpClient* client,  HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
-// int processDownloadTask(HttpRequest *task, write_callback callback, void *stream, int32_t *errorCode);
+// int processDownloadTask(HttpRequest *task, write_callback callback, void *stream, int *errorCode);
+
+template<typename _Cont, typename _Fty>
+static void __clearQueue(_Cont& queue, _Fty pred) {
+    for (auto it = queue.begin(); it != queue.end();)
+    {
+        if (!pred || pred((*it)))
+        {
+            (*it)->release();
+            it = queue.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
 
 // Worker thread
 void HttpClient::networkThread()
@@ -89,13 +99,13 @@ void HttpClient::networkThread()
 
         // step 1: send http request if the requestQueue isn't empty
         {
-            std::lock_guard<std::mutex> lock(_requestQueueMutex);
+            std::lock_guard<std::recursive_mutex> lock(_requestQueueMutex);
             while (_requestQueue.empty())
             {
                 _sleepCondition.wait(_requestQueueMutex);
             }
-            request = _requestQueue.at(0);
-            _requestQueue.erase(0);
+            request = _requestQueue.front();
+            _requestQueue.pop_front();
         }
 
         if (request == _requestSentinel) {
@@ -112,24 +122,25 @@ void HttpClient::networkThread()
 
         // add response packet into queue
         _responseQueueMutex.lock();
-        _responseQueue.pushBack(response);
+        _responseQueue.push_back(response);
         _responseQueueMutex.unlock();
 
-        _schedulerMutex.lock();
-        if (nullptr != _scheduler)
-        {
-            _scheduler->performFunctionInCocosThread(CC_CALLBACK_0(HttpClient::dispatchResponseCallbacks, this));
+        if (!_dispatchOnWorkThread) {
+            std::lock_guard<std::recursive_mutex> lck(_schedulerMutex);
+            if (_scheduler != nullptr)
+                _scheduler->performFunctionInCocosThread(CC_CALLBACK_0(HttpClient::dispatchResponseCallbacks, this));
         }
-        _schedulerMutex.unlock();
+        else
+            dispatchResponseCallbacks();
     }
     
     // cleanup: if worker thread received quit signal, clean up un-completed request queue
     _requestQueueMutex.lock();
-    _requestQueue.clear();
+    __clearQueue(_requestQueue, ClearRequestPredicate{});
     _requestQueueMutex.unlock();
 
     _responseQueueMutex.lock();
-    _responseQueue.clear();
+    __clearQueue(_responseQueue, ClearResponsePredicate{});
     _responseQueueMutex.unlock();
 
     decreaseThreadCountAndMayDeleteThis();
@@ -143,28 +154,31 @@ void HttpClient::networkThreadAlone(HttpRequest* request, HttpResponse* response
     char responseMessage[RESPONSE_BUFFER_SIZE] = { 0 };
     processResponse(response, responseMessage);
 
-    _schedulerMutex.lock();
-    if (nullptr != _scheduler)
-    {
-        _scheduler->performFunctionInCocosThread([this, response, request]{
-            const ccHttpRequestCallback& callback = request->getCallback();
-            Ref* pTarget = request->getTarget();
-            SEL_HttpResponse pSelector = request->getSelector();
+    auto dispatchFunc = [this, response, request] {
+        const ccHttpRequestCallback& callback = request->getCallback();
+        Ref* pTarget = request->getTarget();
+        SEL_HttpResponse pSelector = request->getSelector();
 
-            if (callback != nullptr)
-            {
-                callback(this, response);
-            }
-            else if (pTarget && pSelector)
-            {
-                (pTarget->*pSelector)(this, response);
-            }
-            response->release();
-            // do not release in other thread
-            request->release();
-        });
+        if (callback != nullptr)
+        {
+            callback(this, response);
+        }
+        else if (pTarget && pSelector)
+        {
+            (pTarget->*pSelector)(this, response);
+        }
+        response->release();
+        // do not release in other thread
+        request->release();
+    };
+
+    if (!_dispatchOnWorkThread) {
+        std::lock_guard<std::recursive_mutex> lck(_schedulerMutex);
+        if (_scheduler != nullptr)
+            _scheduler->performFunctionInCocosThread(dispatchFunc);
     }
-    _schedulerMutex.unlock();
+    else
+        dispatchFunc();
 
     decreaseThreadCountAndMayDeleteThis();
 }
@@ -176,8 +190,7 @@ static bool configureCURL(HttpClient* client, CURL* handle, char* errorBuffer)
         return false;
     }
     
-    int32_t code;
-    code = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errorBuffer);
+    int code = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errorBuffer);
     if (code != CURLE_OK) {
         return false;
     }
@@ -215,10 +228,12 @@ class CURLRaii
     CURL *_curl;
     /// Keeps custom header data
     curl_slist *_headers;
+    curl_slist *_hosts;
 public:
     CURLRaii()
         : _curl(curl_easy_init())
         , _headers(nullptr)
+        , _hosts(nullptr)
     {
     }
 
@@ -251,7 +266,7 @@ public:
             return false;
 
         /* get custom header data (if set) */
-        std::vector<std::string> headers=request->getHeaders();
+        auto& headers = request->getHeaders();
         if(!headers.empty())
         {
             /* append custom headers one by one */
@@ -259,6 +274,16 @@ public:
                 _headers = curl_slist_append(_headers,header.c_str());
             /* set custom headers for curl */
             if (!setOption(CURLOPT_HTTPHEADER, _headers))
+                return false;
+        }
+        /* get custom host data (if set) */
+        auto& hosts = request->getHosts();
+        if (!hosts.empty()) {
+            /* append hosts headers one by one */
+            for (auto& host : hosts)
+                _hosts = curl_slist_append(_hosts, host.c_str());
+            /* set custom hosts for curl */
+            if (!setOption(CURLOPT_RESOLVE, _hosts))
                 return false;
         }
         std::string cookieFilename = client->getCookieFilename();
@@ -270,7 +295,6 @@ public:
                 return false;
             }
         }
-
         return setOption(CURLOPT_URL, request->getUrl())
                 && setOption(CURLOPT_WRITEFUNCTION, callback)
                 && setOption(CURLOPT_WRITEDATA, stream)
@@ -280,18 +304,20 @@ public:
     }
 
     /// @param responseCode Null not allowed
-    bool perform(long *responseCode)
+    CURLcode perform(long *responseCode)
     {
-        if (CURLE_OK != curl_easy_perform(_curl))
-            return false;
-        CURLcode code = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, responseCode);
-        if (code != CURLE_OK || !(*responseCode >= 200 && *responseCode < 300)) {
-            CCLOGERROR("Curl curl_easy_getinfo failed: %s", curl_easy_strerror(code));
-            return false;
+        auto ret1 = curl_easy_perform(_curl);
+        auto ret2 = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, responseCode);
+        if (ret2 == CURLE_OK) {
+            if(*responseCode >= 200 && *responseCode < 300)
+                return CURLE_OK;
         }
-        // Get some mor data.
-        
-        return true;
+        else {
+            if (ret1 == CURLE_OK) ret1 = ret2;
+            CCLOGERROR("Curl curl_easy_getinfo failed: %s", curl_easy_strerror(ret2));
+        }
+        // request failed, ensure internalCode not CURLE_OK
+        return ret1 != CURLE_OK ? ret1 : (CURLcode)-1;
     }
 };
 
@@ -300,9 +326,8 @@ static int processGetTask(HttpClient* client, HttpRequest* request, write_callba
 {
     CURLRaii curl;
     bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
-            && curl.setOption(CURLOPT_FOLLOWLOCATION, true)
-            && curl.perform(responseCode);
-    return ok ? 0 : 1;
+        && curl.setOption(CURLOPT_FOLLOWLOCATION, true);
+    return ok ? curl.perform(responseCode) : -1;
 }
 
 //Process POST Request
@@ -312,9 +337,8 @@ static int processPostTask(HttpClient* client, HttpRequest* request, write_callb
     bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
             && curl.setOption(CURLOPT_POST, 1)
             && curl.setOption(CURLOPT_POSTFIELDS, request->getRequestData())
-            && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize())
-            && curl.perform(responseCode);
-    return ok ? 0 : 1;
+            && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize());
+    return ok ? curl.perform(responseCode) : -1;
 }
 
 //Process PUT Request
@@ -324,21 +348,8 @@ static int processPutTask(HttpClient* client, HttpRequest* request, write_callba
     bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
             && curl.setOption(CURLOPT_CUSTOMREQUEST, "PUT")
             && curl.setOption(CURLOPT_POSTFIELDS, request->getRequestData())
-            && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize())
-            && curl.perform(responseCode);
-    return ok ? 0 : 1;
-}
-
-//Process PATCH Request
-static int processPatchTask(HttpClient* client, HttpRequest* request, write_callback callback, void* stream, long* responseCode, write_callback headerCallback, void* headerStream, char* errorBuffer)
-{
-    CURLRaii curl;
-    bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
-              && curl.setOption(CURLOPT_CUSTOMREQUEST, "PATCH")
-              && curl.setOption(CURLOPT_POSTFIELDS, request->getRequestData())
-              && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize())
-              && curl.perform(responseCode);
-    return ok ? 0 : 1;
+            && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize());
+    return ok ? curl.perform(responseCode) : -1;
 }
 
 //Process DELETE Request
@@ -347,9 +358,8 @@ static int processDeleteTask(HttpClient* client, HttpRequest* request, write_cal
     CURLRaii curl;
     bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
             && curl.setOption(CURLOPT_CUSTOMREQUEST, "DELETE")
-            && curl.setOption(CURLOPT_FOLLOWLOCATION, true)
-            && curl.perform(responseCode);
-    return ok ? 0 : 1;
+            && curl.setOption(CURLOPT_FOLLOWLOCATION, true);
+    return ok ? curl.perform(responseCode) : -1;
 }
 
 // HttpClient implementation
@@ -381,7 +391,7 @@ void HttpClient::destroyInstance()
     thiz->_schedulerMutex.unlock();
 
     thiz->_requestQueueMutex.lock();
-    thiz->_requestQueue.pushBack(thiz->_requestSentinel);
+    thiz->_requestQueue.push_back(thiz->_requestSentinel);
     thiz->_requestQueueMutex.unlock();
 
     thiz->_sleepCondition.notify_one();
@@ -392,7 +402,7 @@ void HttpClient::destroyInstance()
 
 void HttpClient::enableCookies(const char* cookieFile)
 {
-    std::lock_guard<std::mutex> lock(_cookieFileMutex);
+    std::lock_guard<std::recursive_mutex> lock(_cookieFileMutex);
     if (cookieFile)
     {
         _cookieFilename = std::string(cookieFile);
@@ -405,12 +415,13 @@ void HttpClient::enableCookies(const char* cookieFile)
     
 void HttpClient::setSSLVerification(const std::string& caFile)
 {
-    std::lock_guard<std::mutex> lock(_sslCaFileMutex);
+    std::lock_guard<std::recursive_mutex> lock(_sslCaFileMutex);
     _sslCaFilename = caFile;
 }
 
 HttpClient::HttpClient()
 : _isInited(false)
+, _dispatchOnWorkThread(false)
 , _timeoutForConnect(30)
 , _timeoutForRead(60)
 , _threadCount(0)
@@ -464,7 +475,7 @@ void HttpClient::send(HttpRequest* request)
     request->retain();
 
     _requestQueueMutex.lock();
-    _requestQueue.pushBack(request);
+    _requestQueue.push_back(request);
     _requestQueueMutex.unlock();
 
     // Notify thread start to work
@@ -496,8 +507,8 @@ void HttpClient::dispatchResponseCallbacks()
     _responseQueueMutex.lock();
     if (!_responseQueue.empty())
     {
-        response = _responseQueue.at(0);
-        _responseQueue.erase(0);
+        response = _responseQueue.front();
+        _responseQueue.pop_front();
     }
     _responseQueueMutex.unlock();
     
@@ -563,16 +574,6 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
             responseMessage);
         break;
 
-    case HttpRequest::Type::PATCH:
-        retValue = processPutTask(this, request,
-            writeData,
-            response->getResponseData(),
-            &responseCode,
-            writeHeaderData,
-            response->getResponseHeader(),
-            responseMessage);
-        break;
-            
     case HttpRequest::Type::DELETE:
         retValue = processDeleteTask(this, request,
             writeData,
@@ -589,7 +590,8 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
     }
 
     // write data to HttpResponse
-    response->setResponseCode(responseCode);
+    response->setResponseCode(static_cast<int>(responseCode));
+    response->setInternalCode(retValue);
     if (retValue != 0)
     {
         response->setSucceed(false);
@@ -604,33 +606,11 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
 void HttpClient::clearResponseAndRequestQueue()
 {
     _requestQueueMutex.lock();
-    if (!_requestQueue.empty())
-    {
-        for (auto it = _requestQueue.begin(); it != _requestQueue.end();)
-        {
-            if(!_clearRequestPredicate ||
-               _clearRequestPredicate((*it)))
-            {
-                (*it)->release();
-                it =_requestQueue.erase(it);
-            }
-            else
-            {
-                it++;
-            }
-        }
-    }
+    __clearQueue(_requestQueue, _clearRequestPredicate);
     _requestQueueMutex.unlock();
     
     _responseQueueMutex.lock();
-    if (_clearResponsePredicate)
-    {
-        _responseQueue.erase(std::remove_if(_responseQueue.begin(), _responseQueue.end(), _clearResponsePredicate), _responseQueue.end());
-    }
-    else
-    {
-        _responseQueue.clear();
-    }
+    __clearQueue(_responseQueue, _clearResponsePredicate);
     _responseQueueMutex.unlock();
 }
 
@@ -660,37 +640,37 @@ void HttpClient::decreaseThreadCountAndMayDeleteThis()
 
 void HttpClient::setTimeoutForConnect(int value)
 {
-    std::lock_guard<std::mutex> lock(_timeoutForConnectMutex);
+    std::lock_guard<std::recursive_mutex> lock(_timeoutForConnectMutex);
     _timeoutForConnect = value;
 }
     
 int HttpClient::getTimeoutForConnect()
 {
-    std::lock_guard<std::mutex> lock(_timeoutForConnectMutex);
+    std::lock_guard<std::recursive_mutex> lock(_timeoutForConnectMutex);
     return _timeoutForConnect;
 }
     
 void HttpClient::setTimeoutForRead(int value)
 {
-    std::lock_guard<std::mutex> lock(_timeoutForReadMutex);
+    std::lock_guard<std::recursive_mutex> lock(_timeoutForReadMutex);
     _timeoutForRead = value;
 }
     
 int HttpClient::getTimeoutForRead()
 {
-    std::lock_guard<std::mutex> lock(_timeoutForReadMutex);
+    std::lock_guard<std::recursive_mutex> lock(_timeoutForReadMutex);
     return _timeoutForRead;
 }
     
 const std::string& HttpClient::getCookieFilename()
 {
-    std::lock_guard<std::mutex> lock(_cookieFileMutex);
+    std::lock_guard<std::recursive_mutex> lock(_cookieFileMutex);
     return _cookieFilename;
 }
     
 const std::string& HttpClient::getSSLVerification()
 {
-    std::lock_guard<std::mutex> lock(_sslCaFileMutex);
+    std::lock_guard<std::recursive_mutex> lock(_sslCaFileMutex);
     return _sslCaFilename;
 }
 
