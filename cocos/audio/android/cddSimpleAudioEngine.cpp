@@ -78,6 +78,6 @@ namespace CocosDenshion {
     void SimpleAudioEngine::resumeAllEffects() { }
     void SimpleAudioEngine::stopEffect(unsigned int nSoundId) { }
     void SimpleAudioEngine::stopAllEffects() { }
-    void SimpleAudioEngine::preloadEffect(const char* pszFilePath) { }
+    int SimpleAudioEngine::preloadEffect(const char* pszFilePath) { return -1; }
     void SimpleAudioEngine::unloadEffect(const char* pszFilePath) { }
 }

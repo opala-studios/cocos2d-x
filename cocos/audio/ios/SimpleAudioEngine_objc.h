@@ -88,7 +88,7 @@
 /** stop all audioes */
 -(void) stopAllEffects;
 /** preloads an audio effect */
--(void) preloadEffect:(NSString*) filePath;
+-(int) preloadEffect:(NSString*) filePath;
 /** unloads an audio effect from memory */
 -(void) unloadEffect:(NSString*) filePath;
 /** Gets a CDSoundSource object set up to play the specified file. */

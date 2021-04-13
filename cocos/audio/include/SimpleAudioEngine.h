@@ -241,7 +241,7 @@ public:
      * @param filePath The path of the effect file.
      * @js NA
      */
-    virtual void preloadEffect(const char* filePath);
+    virtual int preloadEffect(const char* filePath);
 
     /**
      * Unload the preloaded effect from internal buffer.

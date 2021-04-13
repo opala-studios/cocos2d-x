@@ -149,10 +149,10 @@ static void static_stopEffect(int nSoundId)
     [[SimpleAudioEngine sharedEngine] stopEffect: nSoundId];
 }
      
-static void static_preloadEffect(const char* pszFilePath)
+static int static_preloadEffect(const char* pszFilePath)
 {
     __isAudioPreloadOrPlayed = true;
-    [[SimpleAudioEngine sharedEngine] preloadEffect: [NSString stringWithUTF8String: pszFilePath]];
+    return [[SimpleAudioEngine sharedEngine] preloadEffect: [NSString stringWithUTF8String: pszFilePath]];
 }
      
 static void static_unloadEffect(const char* pszFilePath)
@@ -315,11 +315,11 @@ void SimpleAudioEngine::stopEffect(unsigned int nSoundId)
     static_stopEffect(nSoundId);
 }
 
-void SimpleAudioEngine::preloadEffect(const char* pszFilePath)
+int SimpleAudioEngine::preloadEffect(const char* pszFilePath)
 {
     // Changing file path to full path
     std::string fullPath = FileUtils::getInstance()->fullPathForFilename(pszFilePath);
-    static_preloadEffect(fullPath.c_str());
+    return static_preloadEffect(fullPath.c_str());
 }
 
 void SimpleAudioEngine::unloadEffect(const char* pszFilePath)

@@ -278,8 +278,9 @@ int  FontFreeType::getHorizontalKerningForChars(uint64_t firstChar, uint64_t sec
 
 int FontFreeType::getFontAscender() const
 {
-    auto& metrics = _fontRef->size->metrics;
-    return (static_cast<int>(metrics.ascender >> 6) - (static_cast<int>(metrics.descender >> 6) / 2));
+//    auto& metrics = _fontRef->size->metrics;
+//    return (static_cast<int>(metrics.ascender >> 6) - (static_cast<int>(metrics.descender >> 6) / 2));
+    return (static_cast<int>(_fontRef->size->metrics.ascender >> 6));
 }
 
 const char* FontFreeType::getFontFamily() const

@@ -73,6 +73,7 @@ public:
         GET,
         POST,
         PUT,
+        PATCH, //TODO: Only implemented for iOS
         DELETE,
         UNKNOWN,
     };
