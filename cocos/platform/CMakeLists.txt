@@ -155,6 +155,7 @@ set(COCOS_PLATFORM_HEADER
     platform/CCSAXParser.h
     platform/CCStdC.h
     platform/CCThread.h
+    platform/CCFileStream.h
     )
 
 set(COCOS_PLATFORM_SRC
@@ -165,4 +166,5 @@ set(COCOS_PLATFORM_SRC
     platform/CCGLView.cpp
     platform/CCFileUtils.cpp
     platform/CCImage.cpp
+    platform/CCFileStream.cpp
     )

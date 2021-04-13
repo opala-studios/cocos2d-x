@@ -27,7 +27,7 @@
 
 #include "network/HttpClient.h"
 #include <errno.h>
-#include <curl/curl.h>
+#include "curl/curl.h"
 #include "base/CCDirector.h"
 #include "platform/CCFileUtils.h"
 
