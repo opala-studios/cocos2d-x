@@ -1,8 +1,8 @@
 {
-    "version": "v3-deps-172",
-    "zip_file_size": "141133955",
+    "version": "v3-deps-opalib-4",
+    "zip_file_size": "120885814",
     "repo_name": "cocos2d-x-3rd-party-libs-bin",
-    "repo_parent": "https://github.com/cocos2d/",
+    "repo_parent": "https://github.com/opala-studios/",
     "move_dirs": {
         "fbx-conv": "tools"
     }
