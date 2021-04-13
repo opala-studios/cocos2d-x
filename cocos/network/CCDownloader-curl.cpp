@@ -27,7 +27,7 @@
 
 #include <set>
 
-#include <curl/curl.h>
+#include "curl/curl.h"
 #include <thread>
 #include "base/ccUtils.h"
 #include "base/ccUTF8.h"
@@ -376,20 +376,11 @@ namespace cocos2d { namespace network {
 
         void stop()
         { // make sure all task exit properly
-            if (!_requestQueue.empty()) {
-                lock_guard<mutex> lock(_requestMutex);
-                _requestQueue.clear();
-            }
-
-            if (!_processSet.empty()) {
-                lock_guard<mutex> lock(_processMutex);
-                for (auto& task : _processSet)
-                    task.first->cancel();
-                _processSet.clear();
-            }
-
+            lock_guard<mutex> lock(_threadMutex);
             if (_thread.joinable())
-                _thread.join();
+            {
+                _thread.detach();
+            }
         }
 
         bool stoped()
@@ -809,6 +800,7 @@ namespace cocos2d { namespace network {
             } while (!coTaskMap.empty());
 
             curl_multi_cleanup(curlmHandle);
+            this->stop();
             DLLOG("----DownloaderCURL::Impl::_threadProc end");
         }
 
