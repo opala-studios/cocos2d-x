@@ -49,6 +49,8 @@ public:
     static FontAtlas* getFontAtlasCharMap(const std::string& plistFile);
     
     static bool releaseFontAtlas(FontAtlas *atlas);
+    
+    static bool contains(FontAtlas *atlas);
 
     /** Removes cached data.
      It will purge the textures atlas and if multiple texture exist in one FontAtlas.

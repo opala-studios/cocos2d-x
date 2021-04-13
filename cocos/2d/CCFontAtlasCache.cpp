@@ -197,6 +197,22 @@ FontAtlas* FontAtlasCache::getFontAtlasCharMap(const std::string& charMapFile, i
     return nullptr;
 }
 
+bool FontAtlasCache::contains(FontAtlas *atlas) {
+    if (nullptr != atlas)
+    {
+        for( auto &item: _atlasMap )
+        {
+            if ( item.second == atlas )
+            {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+
 bool FontAtlasCache::releaseFontAtlas(FontAtlas *atlas)
 {
     if (nullptr != atlas)

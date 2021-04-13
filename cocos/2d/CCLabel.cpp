@@ -596,7 +596,10 @@ void Label::setFontAtlas(FontAtlas* atlas,bool distanceFieldEnabled /* = false *
     if (atlas == _fontAtlas)
         return;
 
-    CC_SAFE_RETAIN(atlas);
+    if(FontAtlasCache::contains(atlas)){
+        CC_SAFE_RETAIN(atlas);
+    }
+    
     if (_fontAtlas)
     {
         _batchNodes.clear();
