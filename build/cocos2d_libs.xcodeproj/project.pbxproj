@@ -1085,9 +1085,9 @@
 		1ABA68B11888D700007D1BB4 /* CCFontCharMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 1ABA68AD1888D700007D1BB4 /* CCFontCharMap.h */; };
 		1AC0269C1914068200FA920D /* ConvertUTF.h in Headers */ = {isa = PBXBuildFile; fileRef = 1AC026991914068200FA920D /* ConvertUTF.h */; };
 		1AC0269D1914068200FA920D /* ConvertUTF.h in Headers */ = {isa = PBXBuildFile; fileRef = 1AC026991914068200FA920D /* ConvertUTF.h */; };
-		2668732126250458009B1777 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2668726E2624D47F009B1777 /* libpng.a */; };
-		2668732226250460009B1777 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 266872B12624D712009B1777 /* libjpeg.a */; };
-		26687326262505AC009B1777 /* libsimd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 266872B32624D712009B1777 /* libsimd.a */; };
+		266873762626660D009B1777 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 266873752626660D009B1777 /* libpng.a */; };
+		266873782626661F009B1777 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 266873772626661F009B1777 /* libjpeg.a */; };
+		266873AE26266B31009B1777 /* libsimd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 266873AD26266B31009B1777 /* libsimd.a */; };
 		26BE6B3C26247DF1005DA9E7 /* unzip.c in Sources */ = {isa = PBXBuildFile; fileRef = 26BE6B3426247DF0005DA9E7 /* unzip.c */; };
 		26BE6B3D26247DF1005DA9E7 /* crypt.h in Headers */ = {isa = PBXBuildFile; fileRef = 26BE6B3526247DF0005DA9E7 /* crypt.h */; };
 		26BE6B3E26247DF1005DA9E7 /* ioapi.h in Headers */ = {isa = PBXBuildFile; fileRef = 26BE6B3626247DF0005DA9E7 /* ioapi.h */; };
@@ -4416,44 +4416,6 @@
 		ED9C6A9718599AD8000A5232 /* CCNodeGrid.h in Headers */ = {isa = PBXBuildFile; fileRef = ED9C6A9318599AD8000A5232 /* CCNodeGrid.h */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		2668726D2624D47F009B1777 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 266872662624D47E009B1777 /* png.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 3AC4496C7E0740CBA17685B8;
-			remoteInfo = png;
-		};
-		266872B02624D712009B1777 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 7BED8C044CF64011ADD8E2A4;
-			remoteInfo = jpeg;
-		};
-		266872B22624D712009B1777 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6ABC31CE8A1A49DC9A92DC36;
-			remoteInfo = simd;
-		};
-		266872D22624FFF0009B1777 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 266872662624D47E009B1777 /* png.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 3863AC6F34A64F5498DEE97B;
-			remoteInfo = png;
-		};
-		266872D42625000A009B1777 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = FF994C35CC834C328DB61752;
-			remoteInfo = jpeg;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		0634A4C5194B19E400E608AF /* CCActionTimeline.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CCActionTimeline.cpp; sourceTree = "<group>"; };
 		0634A4C6194B19E400E608AF /* CCActionTimeline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCActionTimeline.h; sourceTree = "<group>"; };
@@ -4860,8 +4822,9 @@
 		1AD71EEE180E27CF00808F54 /* CCPhysicsSprite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CCPhysicsSprite.cpp; sourceTree = "<group>"; };
 		1AD71EEF180E27CF00808F54 /* CCPhysicsSprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CCPhysicsSprite.h; sourceTree = "<group>"; };
 		2668722C2624CD85009B1777 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = ../../../../../cocos/SimpleGame/build/lib/Debug/libpng.a; sourceTree = "<group>"; };
-		266872662624D47E009B1777 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = png.xcodeproj; path = ../../../../../cocos/SimpleGame/build/engine/external/png/png.xcodeproj; sourceTree = "<group>"; };
-		266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "libjpeg-turbo.xcodeproj"; path = "../../../../../cocos/SimpleGame/build/engine/external/jpeg/libjpeg-turbo.xcodeproj"; sourceTree = "<group>"; };
+		266873752626660D009B1777 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = ../external/png/prebuilt/ios/libpng.a; sourceTree = "<group>"; };
+		266873772626661F009B1777 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = ../external/jpeg/prebuilt/ios/libjpeg.a; sourceTree = "<group>"; };
+		266873AD26266B31009B1777 /* libsimd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsimd.a; path = ../external/jpeg/prebuilt/ios/libsimd.a; sourceTree = "<group>"; };
 		26BE6B3426247DF0005DA9E7 /* unzip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unzip.c; sourceTree = "<group>"; };
 		26BE6B3526247DF0005DA9E7 /* crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypt.h; sourceTree = "<group>"; };
 		26BE6B3626247DF0005DA9E7 /* ioapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ioapi.h; sourceTree = "<group>"; };
@@ -6116,9 +6079,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				26687326262505AC009B1777 /* libsimd.a in Frameworks */,
-				2668732226250460009B1777 /* libjpeg.a in Frameworks */,
-				2668732126250458009B1777 /* libpng.a in Frameworks */,
+				266873AE26266B31009B1777 /* libsimd.a in Frameworks */,
+				266873782626661F009B1777 /* libjpeg.a in Frameworks */,
+				266873762626660D009B1777 /* libpng.a in Frameworks */,
 				ED682BC1213F63CB001BF6CB /* libuv_a.a in Frameworks */,
 				46BDE4AA1FA3316A00104C05 /* libbox2d.a in Frameworks */,
 				466F05251EF7659300B80080 /* libBulletCollision.a in Frameworks */,
@@ -6174,8 +6137,6 @@
 		1551A334158F2AB200E66CFE = {
 			isa = PBXGroup;
 			children = (
-				266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */,
-				266872662624D47E009B1777 /* png.xcodeproj */,
 				46A15FCC1807A544005B8026 /* AUTHORS */,
 				1A57FFF7180BC5160088DEC7 /* CHANGELOG */,
 				50272539190BF1B900AAF4ED /* cocos2d.cpp */,
@@ -6219,7 +6180,10 @@
 		1551A341158F2AB200E66CFE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				266873AD26266B31009B1777 /* libsimd.a */,
+				266873772626661F009B1777 /* libjpeg.a */,
 				2668722C2624CD85009B1777 /* libpng.a */,
+				266873752626660D009B1777 /* libpng.a */,
 				ED682BC4213F6CBE001BF6CB /* libuv_a.a */,
 				ED682BC2213F6C7A001BF6CB /* libwebsockets.a */,
 				ED682BB9213F5FC6001BF6CB /* libuv_a.a */,
@@ -7329,23 +7293,6 @@
 			);
 			name = json;
 			path = ../external/json;
-			sourceTree = "<group>";
-		};
-		266872672624D47E009B1777 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				2668726E2624D47F009B1777 /* libpng.a */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		266872A92624D712009B1777 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				266872B12624D712009B1777 /* libjpeg.a */,
-				266872B32624D712009B1777 /* libsimd.a */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		26D33C872624C7A4004A9B2E /* curl */ = {
@@ -11450,8 +11397,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				266872D52625000A009B1777 /* PBXTargetDependency */,
-				266872D32624FFF0009B1777 /* PBXTargetDependency */,
 			);
 			name = "libcocos2d iOS";
 			productName = cocos2dx;
@@ -11478,16 +11423,6 @@
 			mainGroup = 1551A334158F2AB200E66CFE;
 			productRefGroup = 1551A340158F2AB200E66CFE /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 266872A92624D712009B1777 /* Products */;
-					ProjectRef = 266872A82624D712009B1777 /* libjpeg-turbo.xcodeproj */;
-				},
-				{
-					ProductGroup = 266872672624D47E009B1777 /* Products */;
-					ProjectRef = 266872662624D47E009B1777 /* png.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				1551A33E158F2AB200E66CFE /* libcocos2d Mac */,
@@ -11496,30 +11431,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		2668726E2624D47F009B1777 /* libpng.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libpng.a;
-			remoteRef = 2668726D2624D47F009B1777 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		266872B12624D712009B1777 /* libjpeg.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libjpeg.a;
-			remoteRef = 266872B02624D712009B1777 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		266872B32624D712009B1777 /* libsimd.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libsimd.a;
-			remoteRef = 266872B22624D712009B1777 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1551A33B158F2AB200E66CFE /* Sources */ = {
@@ -13508,19 +13419,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		266872D32624FFF0009B1777 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = png;
-			targetProxy = 266872D22624FFF0009B1777 /* PBXContainerItemProxy */;
-		};
-		266872D52625000A009B1777 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = jpeg;
-			targetProxy = 266872D42625000A009B1777 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
 		1551A34A158F2AB200E66CFE /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -13810,6 +13708,7 @@
 					"\"$(SRCROOT)/../external/bullet/prebuilt/ios\"",
 					"\"$(SRCROOT)/../external/Box2D/prebuilt/ios\"",
 					"$(SRCROOT)/../external/uv/prebuilt/ios",
+					"\"$(SRCROOT)/../external/png/prebuilt/ios\"",
 				);
 				OTHER_LDFLAGS = "-llibsql3";
 				SDKROOT = iphoneos;
@@ -13847,6 +13746,7 @@
 					"\"$(SRCROOT)/../external/bullet/prebuilt/ios\"",
 					"\"$(SRCROOT)/../external/Box2D/prebuilt/ios\"",
 					"$(SRCROOT)/../external/uv/prebuilt/ios",
+					"\"$(SRCROOT)/../external/png/prebuilt/ios\"",
 				);
 				OTHER_LDFLAGS = "-llibsql3";
 				SDKROOT = iphoneos;
