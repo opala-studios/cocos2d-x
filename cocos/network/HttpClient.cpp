@@ -68,6 +68,7 @@ static size_t writeHeaderData(void *ptr, size_t size, size_t nmemb, void *stream
 
 static int processGetTask(HttpClient* client, HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processPostTask(HttpClient* client, HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
+static int processPatchTask(HttpClient* client, HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processPutTask(HttpClient* client,  HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 static int processDeleteTask(HttpClient* client,  HttpRequest* request, write_callback callback, void *stream, long *errorCode, write_callback headerCallback, void *headerStream, char* errorBuffer);
 // int processDownloadTask(HttpRequest *task, write_callback callback, void *stream, int *errorCode);
@@ -341,6 +342,17 @@ static int processPostTask(HttpClient* client, HttpRequest* request, write_callb
     return ok ? curl.perform(responseCode) : -1;
 }
 
+//Process PATCH Request
+static int processPatchTask(HttpClient* client, HttpRequest* request, write_callback callback, void* stream, long* responseCode, write_callback headerCallback, void* headerStream, char* errorBuffer)
+{
+    CURLRaii curl;
+    bool ok = curl.init(client, request, callback, stream, headerCallback, headerStream, errorBuffer)
+              && curl.setOption(CURLOPT_CUSTOMREQUEST, "PATCH")
+              && curl.setOption(CURLOPT_POSTFIELDS, request->getRequestData())
+              && curl.setOption(CURLOPT_POSTFIELDSIZE, request->getRequestDataSize());
+    return ok ? curl.perform(responseCode) : -1;
+}
+
 //Process PUT Request
 static int processPutTask(HttpClient* client, HttpRequest* request, write_callback callback, void* stream, long* responseCode, write_callback headerCallback, void* headerStream, char* errorBuffer)
 {
@@ -563,6 +575,16 @@ void HttpClient::processResponse(HttpResponse* response, char* responseMessage)
             response->getResponseHeader(),
             responseMessage);
         break;
+
+    case HttpRequest::Type::PATCH: // HTTP PATCH
+        retValue = processPatchTask(this, request,
+           writeData,
+           response->getResponseData(),
+           &responseCode,
+           writeHeaderData,
+           response->getResponseHeader(),
+           responseMessage);
+    break;
 
     case HttpRequest::Type::PUT:
         retValue = processPutTask(this, request,
