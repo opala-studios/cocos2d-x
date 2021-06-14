@@ -856,22 +856,6 @@ public:
      */
     virtual std::string getNewFilename(const std::string &filename) const;
 
-protected:
-    /**
-     *  The default constructor.
-     */
-    FileUtils();
-
-    /**
-     *  Initializes the instance of FileUtils. It will set _searchPathArray and _searchResolutionsOrderArray to default values.
-     *
-     *  @note When you are porting Cocos2d-x to a new platform, you may need to take care of this method.
-     *        You could assign a default value to _defaultResRootPath in the subclass of FileUtils(e.g. FileUtilsAndroid). Then invoke the FileUtils::init().
-     *  @return true if succeed, otherwise it returns false.
-     *
-     */
-    virtual bool init();
-
     /**
      *  Checks whether a file exists without considering search paths and resolution orders.
      *  @param filename The file (with absolute path) to look up for
@@ -917,6 +901,22 @@ protected:
      * @since 3.17.1
      */
     virtual std::string fullPathForDirectory(const std::string &dirname) const;
+
+protected:
+    /**
+     *  The default constructor.
+     */
+    FileUtils();
+
+    /**
+     *  Initializes the instance of FileUtils. It will set _searchPathArray and _searchResolutionsOrderArray to default values.
+     *
+     *  @note When you are porting Cocos2d-x to a new platform, you may need to take care of this method.
+     *        You could assign a default value to _defaultResRootPath in the subclass of FileUtils(e.g. FileUtilsAndroid). Then invoke the FileUtils::init().
+     *  @return true if succeed, otherwise it returns false.
+     *
+     */
+    virtual bool init();
 
     /**
     * mutex used to protect fields. 

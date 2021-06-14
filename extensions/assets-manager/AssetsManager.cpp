@@ -72,37 +72,33 @@ AssetsManager::AssetsManager(const char* packageUrl/* =nullptr */, const char* v
                                       const std::string& /*errorStr*/)
     {
         _isDownloading = false;
-        
+
         if (nullptr == _delegate)
         {
             return;
         }
-        auto err = (DownloadTask::ERROR_FILE_OP_FAILED == errorCode) ? ErrorCode::CREATE_FILE : ErrorCode::NETWORK;
+        auto err = (DownloadTask::ERROR_OPEN_FILE_FAILED == errorCode) ? ErrorCode::CREATE_FILE : ErrorCode::NETWORK;
         _delegate->onError(err);
     };
-    
+
     // progress callback
-    _downloader->onTaskProgress = [this](const DownloadTask& task,
-                                         int64_t /*bytesReceived*/,
-                                         int64_t totalBytesReceived,
-                                         int64_t totalBytesExpected)
-    {
+    _downloader->setOnTaskProgress([this](const DownloadTask &task) {
         if(FileUtils::getInstance()->getFileExtension(task.requestURL) != ".zip")
         {
             // get version progress don't report
             return;
         }
-        
+
         if (nullptr == _delegate)
         {
             return;
         }
-        
-        int percent = totalBytesExpected ? int(totalBytesReceived * 100 / totalBytesExpected) : 0;
+
+        int percent = task.progressInfo.totalBytesExpected ? int(task.progressInfo.totalBytesReceived * 100 / task.progressInfo.totalBytesExpected) : 0;
         _delegate->onProgress(percent);
         CCLOG("downloading... %d%%", percent);
-    };
-    
+    });
+
     // get version from version file when get data success
     _downloader->onDataTaskSuccess = [this](const DownloadTask& /*task*/,
                                             std::vector<unsigned char>& data)
@@ -110,7 +106,7 @@ AssetsManager::AssetsManager(const char* packageUrl/* =nullptr */, const char* v
         // store version info to member _version
         const char *p = (char *)data.data();
         _version.insert(_version.end(), p, p + data.size());
-        
+
         if (getVersion() == _version)
         {
             if (_delegate)
@@ -130,13 +126,13 @@ AssetsManager::AssetsManager(const char* packageUrl/* =nullptr */, const char* v
         if (_versionFileUrl.empty()
             || _packageUrl.empty()
             || FileUtils::getInstance()->getFileExtension(_packageUrl) != ".zip"
-            )
+                )
         {
             CCLOG("no version file url, or no package url, or the package is not a zip file");
             _isDownloading = false;
             return;
         }
-        
+
         // Is package already downloaded?
         _downloadedVersion = UserDefault::getInstance()->getStringForKey(keyOfDownloadedVersion().c_str());
         if (_downloadedVersion == _version)
@@ -144,12 +140,12 @@ AssetsManager::AssetsManager(const char* packageUrl/* =nullptr */, const char* v
             downloadAndUncompress();
             return;
         }
-        
+
         // start download;
         const string outFileName = _storagePath + TEMP_PACKAGE_FILE_NAME;
         _downloader->createDownloadFileTask(_packageUrl, outFileName);
     };
-    
+
     // after download package, do uncompress operation
     _downloader->onFileTaskSuccess = [this](const DownloadTask& /*task*/)
     {

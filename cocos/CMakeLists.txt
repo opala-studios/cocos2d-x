@@ -133,8 +133,11 @@ use_cocos2dx_libs_depend(cocos2d)
 target_include_directories(cocos2d
     PUBLIC ${COCOS2DX_ROOT_PATH}
     PUBLIC ${COCOS2DX_ROOT_PATH}/cocos
+    PUBLIC ${COCOS2DX_ROOT_PATH}/external
     PUBLIC ${COCOS2DX_ROOT_PATH}/extensions
     PUBLIC ${COCOS2DX_ROOT_PATH}/cocos/platform
+
+    INTERFACE ${COCOS2DX_ROOT_PATH}/external
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/base
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/editor-support
     INTERFACE ${COCOS2DX_ROOT_PATH}/cocos/audio/include

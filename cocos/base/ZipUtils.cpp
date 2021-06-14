@@ -43,6 +43,7 @@
 #include "base/ccMacros.h"
 #include "platform/CCFileUtils.h"
 #include <map>
+#include <mutex>
 
 // minizip 1.2.0 is same with other platforms
 #define unzGoToFirstFile64(A,B,C,D) unzGoToFirstFile2(A,B,C,D, NULL, 0, NULL, 0)
@@ -256,7 +257,7 @@ int ZipUtils::inflateGZipFile(const char *path, unsigned char **out)
     CCASSERT(out, "out can't be nullptr.");
     CCASSERT(&*out, "&*out can't be nullptr.");
     
-    gzFile inFile = gzopen(FileUtils::getInstance()->getSuitableFOpen(path).c_str(), "rb");
+    gzFile inFile = gzopen(path, "rb");
     if( inFile == nullptr ) {
         CCLOG("cocos2d: ZipUtils: error open gzip file: %s", path);
         return -1;
@@ -511,6 +512,7 @@ class ZipFilePrivate
 {
 public:
     unzFile zipFile;
+    std::mutex zipFileMtx;
     std::unique_ptr<ourmemory_s> memfs;
     
     // std::unordered_map is faster if available on the platform
@@ -538,7 +540,7 @@ ZipFile::ZipFile()
 ZipFile::ZipFile(const std::string &zipFile, const std::string &filter)
 : _data(new ZipFilePrivate)
 {
-    _data->zipFile = unzOpen(FileUtils::getInstance()->getSuitableFOpen(zipFile).c_str());
+    _data->zipFile = unzOpen(zipFile.c_str());
     setFilter(filter);
 }
 
@@ -655,10 +657,12 @@ unsigned char *ZipFile::getFileData(const std::string &fileName, ssize_t *size)
         CC_BREAK_IF(!_data->zipFile);
         CC_BREAK_IF(fileName.empty());
         
-        ZipFilePrivate::FileListContainer::const_iterator it = _data->fileList.find(fileName);
+        ZipFilePrivate::FileListContainer::iterator it = _data->fileList.find(fileName);
         CC_BREAK_IF(it ==  _data->fileList.end());
         
-        ZipEntryInfo fileInfo = it->second;
+        ZipEntryInfo& fileInfo = it->second;
+
+        std::unique_lock<std::mutex> lck(_data->zipFileMtx);
         
         int nRet = unzGoToFilePos(_data->zipFile, &fileInfo.pos);
         CC_BREAK_IF(UNZ_OK != nRet);
@@ -688,11 +692,13 @@ bool ZipFile::getFileData(const std::string &fileName, ResizableBuffer* buffer)
         CC_BREAK_IF(!_data->zipFile);
         CC_BREAK_IF(fileName.empty());
         
-        ZipFilePrivate::FileListContainer::const_iterator it = _data->fileList.find(fileName);
+        ZipFilePrivate::FileListContainer::iterator it = _data->fileList.find(fileName);
         CC_BREAK_IF(it ==  _data->fileList.end());
         
-        ZipEntryInfo fileInfo = it->second;
+        ZipEntryInfo& fileInfo = it->second;
         
+        std::unique_lock<std::mutex> lck(_data->zipFileMtx);
+
         int nRet = unzGoToFilePos(_data->zipFile, &fileInfo.pos);
         CC_BREAK_IF(UNZ_OK != nRet);
         
@@ -755,6 +761,120 @@ bool ZipFile::initWithBuffer(const void *buffer, uLong size)
 
     setFilter(emptyFilename);
     return true;
+}
+
+bool ZipFile::zfopen(const std::string& fileName, ZipFileStream* zfs)
+{
+    if (!zfs) return false;
+    auto it = _data->fileList.find(fileName);
+    if (it != _data->fileList.end()) {
+        zfs->entry = &it->second;
+        zfs->offset = 0;
+        return true;
+    }
+    zfs->entry = nullptr;
+    zfs->offset = -1;
+    return false;
+}
+
+int ZipFile::zfread(ZipFileStream* zfs, void* buf, unsigned int size)
+{
+    int n = 0;
+    do {
+        CC_BREAK_IF(zfs == nullptr || zfs->offset >= zfs->entry->uncompressed_size);
+
+        std::unique_lock<std::mutex> lck(_data->zipFileMtx);
+
+        int nRet = unzGoToFilePos(_data->zipFile, &zfs->entry->pos);
+        CC_BREAK_IF(UNZ_OK != nRet);
+
+        nRet = unzOpenCurrentFile(_data->zipFile);
+        unzSeek64(_data->zipFile, zfs->offset, SEEK_SET);
+        n = unzReadCurrentFile(_data->zipFile, buf, size);
+        if (n > 0)
+            zfs->offset += n;
+
+        unzCloseCurrentFile(_data->zipFile);
+
+    } while (false);
+
+    return n;
+}
+
+long ZipFile::zfseek(ZipFileStream* zfs, long offset, int origin)
+{
+    long result = -1;
+    if (zfs != nullptr) {
+        switch (origin) {
+        case SEEK_SET:
+            result = offset;
+            break;
+        case SEEK_CUR:
+            result = zfs->offset + offset;
+            break;
+        case SEEK_END:
+            result = (long)zfs->entry->uncompressed_size + offset;
+            break;
+        default:;
+        }
+
+        if (result >= 0) {
+            zfs->offset = result;
+        }
+        else
+            result = -1;
+    }
+
+    return result;
+}
+void ZipFile::zfclose(ZipFileStream* zfs)
+{
+    if (zfs != nullptr && zfs->entry != nullptr) {
+        zfs->entry = nullptr;
+        zfs->offset = -1;
+    }
+}
+
+unsigned char* ZipFile::getFileDataFromZip(const std::string& zipFilePath, const std::string& filename, ssize_t* size)
+{
+    unsigned char* buffer = nullptr;
+    unzFile file = nullptr;
+    *size = 0;
+
+    do
+    {
+        CC_BREAK_IF(zipFilePath.empty());
+
+        file = unzOpen(zipFilePath.c_str());
+        CC_BREAK_IF(!file);
+
+        // minizip 1.2.0 is same with other platforms
+        int ret = unzLocateFile(file, filename.c_str(), nullptr);
+
+        CC_BREAK_IF(UNZ_OK != ret);
+
+        char filePathA[260];
+        unz_file_info fileInfo;
+        ret = unzGetCurrentFileInfo(file, &fileInfo, filePathA, sizeof(filePathA), nullptr, 0, nullptr, 0);
+        CC_BREAK_IF(UNZ_OK != ret);
+
+        ret = unzOpenCurrentFile(file);
+        CC_BREAK_IF(UNZ_OK != ret);
+
+        buffer = (unsigned char*)malloc(fileInfo.uncompressed_size);
+        int CC_UNUSED readedSize = unzReadCurrentFile(file, buffer, static_cast<unsigned>(fileInfo.uncompressed_size));
+        CCASSERT(readedSize == 0 || readedSize == (int)fileInfo.uncompressed_size, "the file size is wrong");
+
+        *size = fileInfo.uncompressed_size;
+        unzCloseCurrentFile(file);
+    } while (0);
+
+    if (file)
+    {
+        unzClose(file);
+    }
+
+    return buffer;
 }
 
 NS_CC_END
