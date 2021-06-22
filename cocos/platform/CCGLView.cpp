@@ -328,6 +328,9 @@ void GLView::handleTouchesBegin(int num, intptr_t ids[], float xs[], float ys[])
             
             g_touchIdReorderMap.emplace(id, unusedIndex);
             touchEvent._touches.push_back(touch);
+            
+            if(_touchesBeginCallback)
+                _touchesBeginCallback((int) id, x, y);
         }
     }
 
@@ -379,6 +382,9 @@ void GLView::handleTouchesMove(int num, intptr_t ids[], float xs[], float ys[], 
                                 (y - _viewPortRect.origin.y) / _scaleY, force, maxForce);
             
             touchEvent._touches.push_back(touch);
+            
+            if(_touchesMoveCallback)
+                _touchesMoveCallback((int) id, x, y);
         }
         else
         {
@@ -433,7 +439,10 @@ void GLView::handleTouchesOfEndOrCancel(EventTouch::EventCode eventCode, int num
             removeUsedIndexBit(iter->second);
 
             g_touchIdReorderMap.erase(id);
-        } 
+            
+            if(_touchesEndCallback)
+                _touchesEndCallback((int) id, x, y);
+        }
         else
         {
             CCLOG("Ending touches with id: %ld error", static_cast<long>(id));
@@ -523,6 +532,21 @@ void GLView::setVR(VRIRenderer* vrRenderer)
 
         _vrImpl = vrRenderer;
     }
+}
+
+void GLView::setTouchesBeginCallback(SEL_TouchesCallback callback)
+{
+    _touchesBeginCallback = callback;
+}
+
+void GLView::setTouchesMoveCallback(SEL_TouchesCallback callback)
+{
+    _touchesMoveCallback = callback;
+}
+
+void GLView::setTouchesEndCallback(SEL_TouchesCallback callback)
+{
+    _touchesEndCallback = callback;
 }
 
 NS_CC_END

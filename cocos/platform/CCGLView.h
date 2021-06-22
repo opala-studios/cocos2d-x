@@ -44,6 +44,8 @@ typedef void* id;
 #define CC_ICON_SET_SUPPORT true
 #endif /* (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX) */
 
+typedef std::function<void(int touchId, float x, float y)> SEL_TouchesCallback;
+
 /** There are some Resolution Policy for Adapt to the screen. */
 enum class ResolutionPolicy
 {
@@ -448,6 +450,10 @@ public:
      */
     void setVR(VRIRenderer* vrrenderer);
     VRIRenderer* getVR() const;
+    
+    void setTouchesBeginCallback(SEL_TouchesCallback callback);
+    void setTouchesMoveCallback(SEL_TouchesCallback callback);
+    void setTouchesEndCallback(SEL_TouchesCallback callback);
 
 protected:
     void updateDesignResolutionSize();
@@ -469,6 +475,11 @@ protected:
 
     // VR stuff
     VRIRenderer* _vrImpl;
+    
+    SEL_TouchesCallback _touchesBeginCallback;
+    SEL_TouchesCallback _touchesMoveCallback;
+    SEL_TouchesCallback _touchesEndCallback;
+    
 };
 
 // end of platform group
