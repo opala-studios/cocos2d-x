@@ -132,9 +132,16 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
             // Android launched another instance of the root activity into an existing task
             //  so just quietly finish and go away, dropping the user back into the activity
             //  at the top of the stack (ie: the last state of this task)
-            finish();
-            Log.w(TAG, "[Workaround] Ignore the activity started from icon!");
-            return;
+            
+            //TODO: NESTED WORKROUND SHOULD NOT EXIST HERE
+            if(this.isTestLabLaunch()) {
+                //do nothing
+            }
+            else{
+                finish();
+                Log.w(TAG, "[Workaround] Ignore the activity started from icon!");
+                return;
+            }
         }
 
         this.hideVirtualButton();
@@ -167,6 +174,30 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
         // Audio configuration
         this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
+
+    //FIREBASE TESLAB HELPERS  - ################################
+    protected boolean isTestLabLaunch(){
+        Intent intent = getIntent();
+        if (intent.getAction() != null) {
+            if(intent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected int getScenario(){
+        Intent intent = getIntent();
+        if (intent.getAction() != null) {
+            if(intent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
+                int scenario = intent.getIntExtra("scenario", 0);
+                return scenario;
+            }
+        }
+        return 0;
+    }
+    //####################################################################
+
 
     //native method,call GLViewImpl::getGLContextAttrs() to get the OpenGL ES context attributions
     private static native int[] getGLContextAttrs();
@@ -258,7 +289,8 @@ public abstract class Cocos2dxActivity extends Activity implements Cocos2dxHelpe
     // Methods
     // ===========================================================
     public void init() {
-        
+        Log.d(TAG, "INIT COCOS");
+
         // FrameLayout
         ViewGroup.LayoutParams framelayout_params =
             new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
