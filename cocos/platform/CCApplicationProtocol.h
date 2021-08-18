@@ -100,6 +100,20 @@ public:
     * @lua NA
     */
     virtual void setAnimationInterval(float interval) = 0;
+    
+    /**
+    * @brief  This function will be called when the application becomes active.
+    * @js NA
+    * @lua NA
+    */
+    virtual void applicationDidBecomeActive() = 0;
+    
+    /**
+    * @brief  This function will be called when the application becomes inactive.
+    * @js NA
+    * @lua NA
+    */
+    virtual void applicationWillResignActive() = 0;
 
     /** Subclass override the function to set OpenGL context attribution instead of use default value.
     * And now can only set six attributions:redBits,greenBits,blueBits,alphaBits,depthBits,stencilBits.
