@@ -238,9 +238,9 @@ void SimpleAudioEngine::stopAllEffects()
  * @param filePath The path of the effect file.
  * @js NA
  */
-void SimpleAudioEngine::preloadEffect(const char* filePath)
+int SimpleAudioEngine::preloadEffect(const char* filePath)
 {
-    AudioEngine::preload(filePath);
+    return AudioEngine::preload(filePath);
 }
 
 /**
