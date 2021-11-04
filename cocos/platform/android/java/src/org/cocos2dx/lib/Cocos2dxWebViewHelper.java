@@ -31,7 +31,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.webkit.WebSettings;
@@ -44,6 +46,25 @@ import java.util.concurrent.FutureTask;
 
 
 public class Cocos2dxWebViewHelper {
+
+    public interface OnMessageReceived {
+        void onMessage(String message);
+    }
+
+    public static class JSCallbackHandler {
+
+        private OnMessageReceived _receiver;
+
+        public JSCallbackHandler(OnMessageReceived receiver){
+            _receiver = receiver;
+        }
+
+        @JavascriptInterface
+        public void onMessage(String message){
+            _receiver.onMessage(message);
+        }
+    }
+
     private static final String TAG = Cocos2dxWebViewHelper.class.getSimpleName();
     private static Handler sHandler;
     private static Cocos2dxActivity sCocos2dxActivity;
@@ -93,6 +114,10 @@ public class Cocos2dxWebViewHelper {
                 FrameLayout.LayoutParams lParams = new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.WRAP_CONTENT,
                         FrameLayout.LayoutParams.WRAP_CONTENT);
+
+                webView.addJavascriptInterface(new JSCallbackHandler(message -> {
+                    _onJsCallback(index, message);
+                }), "JSCallbackHandler");
                 sLayout.addView(webView, lParams);
 
                 webViews.put(index, webView);
