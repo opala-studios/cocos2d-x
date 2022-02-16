@@ -332,6 +332,10 @@ private:
         return "";
     }
 
+    static std::string getJNISignature(jbyteArray){
+        return "[B";
+    }
+
     static std::string getJNISignature(bool) {
         return "Z";
     }
