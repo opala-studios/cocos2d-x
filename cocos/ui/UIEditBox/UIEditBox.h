@@ -664,6 +664,8 @@ namespace ui {
         void touchDownAction(Ref *sender, TouchEventType controlEvent);
 
         void openKeyboard() const;
+        
+        void closeKeyboard() const;
 
     protected:
         virtual void releaseUpEvent() override;
