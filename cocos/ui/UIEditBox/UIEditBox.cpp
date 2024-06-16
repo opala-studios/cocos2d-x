@@ -82,6 +82,11 @@ void EditBox::openKeyboard() const
     _editBoxImpl->openKeyboard();
 }
 
+void EditBox::closeKeyboard() const
+{
+    _editBoxImpl->closeKeyboard();
+}
+
 void EditBox::touchDownAction(Ref* /*sender*/, TouchEventType controlEvent)
 {
     if (controlEvent == Widget::TouchEventType::ENDED) {
